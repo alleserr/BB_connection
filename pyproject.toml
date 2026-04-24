@@ -1,0 +1,11 @@
+[project]
+name = "bb-connection"
+version = "0.1.0"
+description = "Local Bybit spot market analytics core with an MCP server"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
