@@ -1,12 +1,8 @@
 from __future__ import annotations
-
-import contextlib
 from typing import Any
 from urllib.parse import urlparse
 
-from starlette.applications import Starlette
 from starlette.responses import JSONResponse
-from starlette.routing import Mount, Route
 
 from app.config import Settings, get_settings
 from app.mcp.tools import ToolHandlers
@@ -54,7 +50,7 @@ def create_mcp_server(settings: Settings | None = None) -> Any:
     )
     mcp.settings.host = resolved_settings.mcp_host
     mcp.settings.port = resolved_settings.mcp_port
-    mcp.settings.streamable_http_path = "/"
+    mcp.settings.streamable_http_path = "/mcp"
 
     @mcp.tool()
     def analyze_symbol(symbol: str, timeframe: str, bars_limit: int | None = None) -> dict[str, Any]:
@@ -90,28 +86,17 @@ def create_mcp_server(settings: Settings | None = None) -> Any:
 
         return handlers.get_raw_snapshot(symbol=symbol, timeframe=timeframe)
 
-    return mcp
-
-
-def build_asgi_app(settings: Settings | None = None) -> Starlette:
-    resolved_settings = settings or get_settings()
-    mcp = create_mcp_server(settings=resolved_settings)
-
+    @mcp.custom_route("/health", methods=["GET"], include_in_schema=False)
     async def healthcheck(_request: Any) -> JSONResponse:
         return JSONResponse({"status": "ok", "service": "bybit-spot-analytics"})
 
-    @contextlib.asynccontextmanager
-    async def lifespan(_app: Starlette):
-        async with mcp.session_manager.run():
-            yield
+    return mcp
 
-    return Starlette(
-        routes=[
-            Route("/health", endpoint=healthcheck),
-            Mount("/mcp", app=mcp.streamable_http_app()),
-        ],
-        lifespan=lifespan,
-    )
+
+def build_asgi_app(settings: Settings | None = None) -> Any:
+    resolved_settings = settings or get_settings()
+    mcp = create_mcp_server(settings=resolved_settings)
+    return mcp.streamable_http_app()
 
 
 def run_server(settings: Settings | None = None) -> None:
@@ -123,4 +108,6 @@ def run_server(settings: Settings | None = None) -> None:
         host=resolved_settings.mcp_host,
         port=resolved_settings.mcp_port,
         log_level=resolved_settings.log_level.lower(),
+        proxy_headers=True,
+        forwarded_allow_ips="*",
     )
