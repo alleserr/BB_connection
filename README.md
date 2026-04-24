@@ -241,6 +241,38 @@ https://example-subdomain.trycloudflare.com
 https://example-subdomain.trycloudflare.com/mcp
 ```
 
+## Railway Deploy
+
+Для постоянного удалённого endpoint проект можно деплоить на Railway напрямую из GitHub.
+
+В репозитории уже добавлен `railway.toml`, поэтому Railway получает:
+
+- явный `startCommand`
+- `healthcheckPath=/health`
+- restart policy
+- запуск на `0.0.0.0:$PORT`
+
+Что нужно задать в Railway Variables:
+
+- `BYBIT_API_KEY`
+- `BYBIT_API_SECRET`
+- `BYBIT_BASE_URL`
+- `DEFAULT_BARS_LIMIT`
+- `MAX_BARS_LIMIT`
+- `LOG_LEVEL`
+- `USE_TESTNET`
+- `MCP_HOST=0.0.0.0`
+- `MCP_PORT=${{PORT}}` или просто не задавать `MCP_PORT`, если Railway передаёт порт только через start command
+- `MCP_PUBLIC_BASE_URL=https://<your-service-domain>`
+
+После успешного deploy MCP endpoint будет:
+
+```text
+https://<your-service-domain>/mcp
+```
+
+Если Railway не определяет старт автоматически, это уже закрыто через `railway.toml`.
+
 ## Тесты
 
 Запуск тестов:
